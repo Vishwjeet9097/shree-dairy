@@ -31,6 +31,12 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ language, customers, en
 
   const liveClient = useRef<GeminiLive | null>(null);
   
+  // Keep the latest action handler in a ref to avoid stale closures in the Gemini callback
+  const onActionRef = useRef(onAction);
+  useEffect(() => {
+      onActionRef.current = onAction;
+  }, [onAction]);
+  
   // Background/Foreground Handling for Microphone Safety
   useEffect(() => {
     const handleAppStateChange = async (state: { isActive: boolean }) => {
@@ -236,7 +242,8 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ language, customers, en
 
           if (actionType !== 'UNKNOWN') {
              const result = { action: actionType, data: data };
-             const responseMsg = await onAction(result);
+             // Use ref to call the latest version of onAction
+             const responseMsg = await onActionRef.current(result);
              return { success: true, message: responseMsg || "Done" };
           }
           return { error: "Unknown tool" };
