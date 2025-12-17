@@ -1,0 +1,18 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="1080" fill="#0f172a" />
+  <circle cx="540" cy="540" r="380" fill="#bef264" />
+  <text
+    x="50%"
+    y="55%"
+    dominant-baseline="middle"
+    text-anchor="middle"
+    font-family="'Hind', 'Noto Sans Devanagari', sans-serif"
+    font-weight="700"
+    font-size="440"
+    fill="#dc2626"
+  >
+    श्री
+  </text>
+</svg>
+
+

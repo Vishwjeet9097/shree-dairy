@@ -1,0 +1,38 @@
+<svg width="1024" height="1024" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bef264" stop-opacity="1" />
+      <stop offset="100%" stop-color="#84cc16" stop-opacity="1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur" />
+      <feMerge>
+        <feMergeNode in="coloredBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="90" ry="90" fill="#0f172a" />
+  <circle cx="256" cy="256" r="226" fill="url(#logoGradient)" />
+  <circle cx="256" cy="256" r="210" fill="none" stroke="white" stroke-width="10" opacity="0.35" />
+
+  <path
+    d="M256 120 C256 120 160 240 160 310 C160 365 203 410 256 410 C309 410 352 365 352 310 C352 240 256 120 256 120 Z"
+    fill="white"
+  />
+
+  <text
+    x="50%"
+    y="55%"
+    dominant-baseline="middle"
+    text-anchor="middle"
+    font-family="'Hind', 'Noto Sans Devanagari', sans-serif"
+    font-weight="bold"
+    font-size="220"
+    fill="#dc2626"
+    filter="url(#glow)"
+  >
+    श्री
+  </text>
+</svg>

@@ -223,20 +223,18 @@ const App: React.FC = () => {
   };
   
   const handleMicClick = async () => {
-      if (micPermissionState === 'denied') {
-          showNotification("Microphone denied. Please allow in Android Settings > Apps > Shree > Permissions.", 'error');
-          return;
-      }
-
+      // Always attempt a fresh getUserMedia so we don't get stuck on stale state
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           stream.getTracks().forEach(track => track.stop());
+          setMicPermissionState('granted');
           setIsVoiceOpen(true);
       } catch (e: any) {
           console.error("Mic check failed", e);
           if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
               setMicPermissionState('denied');
               showNotification("Permission required! Tap to open Settings.", 'error');
+              handlePermissionRequest('microphone');
           } else {
               handlePermissionRequest('microphone');
           }
@@ -280,6 +278,7 @@ const App: React.FC = () => {
               stream.getTracks().forEach(track => track.stop());
               
               setState(prev => ({ ...prev, hasSeenMicRationale: true }));
+              setMicPermissionState('granted');
               setPermissionModalOpen(false);
               setIsVoiceOpen(true); 
           } catch (err) {
