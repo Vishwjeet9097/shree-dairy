@@ -96,4 +96,9 @@ export interface AppState {
   isOnboardingComplete: boolean;
   customApiKey?: string;
   useCustomApiKey?: boolean;
+  hasSeenMicRationale?: boolean;
+  notificationSchedule: {
+      morning: string; // "09:00"
+      evening: string; // "19:00"
+  };
 }

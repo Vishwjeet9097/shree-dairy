@@ -48,11 +48,11 @@ export const createInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
   const margin = 14;
   
   // -- COLORS --
-  const primaryColor = [132, 204, 22]; // Lime 500 (#84cc16)
-  const darkColor = [17, 24, 39]; // Gray 900
-  const grayColor = [107, 114, 128]; // Gray 500
-  const lightBg = [249, 250, 251]; // Gray 50
-  const redColor = [220, 38, 38]; // Red 600
+  const primaryColor: [number, number, number] = [132, 204, 22]; // Lime 500 (#84cc16)
+  const darkColor: [number, number, number] = [17, 24, 39]; // Gray 900
+  const grayColor: [number, number, number] = [107, 114, 128]; // Gray 500
+  const lightBg: [number, number, number] = [249, 250, 251]; // Gray 50
+  const redColor: [number, number, number] = [220, 38, 38]; // Red 600
   const watermarkColor = "#dc2626"; // Red Hex for Canvas
 
   // -- WATERMARK --
@@ -61,7 +61,7 @@ export const createInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
   
   if (watermarkImg.dataUrl) {
       doc.saveGraphicsState();
-      doc.setGState(new doc.GState({ opacity: 0.08 })); 
+      doc.setGState(new (doc as any).GState({ opacity: 0.08 })); 
       const x = pageWidth / 2;
       const y = pageHeight / 2;
       doc.addImage(
@@ -212,7 +212,7 @@ export const createInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
     theme: 'grid',
     headStyles: { 
         fillColor: primaryColor, 
-        textColor: [255, 255, 255],
+        textColor: [255, 255, 255] as [number, number, number],
         fontStyle: 'bold',
         fontSize: 10,
         halign: 'left',
@@ -222,11 +222,11 @@ export const createInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
         fontSize: 10,
         cellPadding: 6,
         textColor: darkColor,
-        lineColor: [229, 231, 235],
+        lineColor: [229, 231, 235] as [number, number, number],
         lineWidth: 0.1
     },
     alternateRowStyles: {
-        fillColor: [249, 250, 251]
+        fillColor: [249, 250, 251] as [number, number, number]
     },
     columnStyles: {
         0: { cellWidth: 'auto', fontStyle: 'bold' }, 
@@ -321,6 +321,17 @@ export const saveInvoice = async (doc: jsPDF, filename: string): Promise<string>
         doc.save(filename);
         return '';
     }
+};
+
+// Save to Cache specifically for sharing (doesn't pollute User documents and avoids permissions on some Android versions)
+export const saveToCache = async (doc: jsPDF, filename: string): Promise<string> => {
+    const base64 = doc.output('datauristring').split(',')[1];
+    const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+    });
+    return result.uri;
 };
 
 export const shareInvoice = async (uri: string, title: string) => {

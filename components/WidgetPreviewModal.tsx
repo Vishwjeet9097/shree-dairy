@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Smartphone, AlertCircle, Sun, Moon, Battery, Wifi, Signal, IndianRupee, Clock, Calendar } from 'lucide-react';
+import { X, Smartphone, AlertCircle, Sun, Moon, Battery, Wifi, Signal, IndianRupee, Clock, Calendar, PlusCircle } from 'lucide-react';
 import { Customer, MilkEntry, Payment, InseminationRecord } from '../types';
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
 
 const WidgetPreviewModal: React.FC<Props> = ({ isOpen, onClose, customers, entries, payments, inseminations = [] }) => {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [showAddGuide, setShowAddGuide] = useState(false);
 
   // --- Logic replicated from WidgetBridge ---
   const widgetData = useMemo(() => {
@@ -203,23 +204,53 @@ const WidgetPreviewModal: React.FC<Props> = ({ isOpen, onClose, customers, entri
                     <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${activeSlide === 1 ? 'bg-white w-4' : 'bg-white/30'}`}></div>
                 </div>
 
-                <div className="mt-6 px-8 text-center relative z-10">
-                    <p className="text-white/40 text-xs leading-relaxed font-medium">
-                        This widget keeps you updated on critical business metrics right from your home screen.
-                    </p>
-                </div>
+                {/* Add Widget Button */}
+                {!showAddGuide && (
+                    <div className="mt-8 px-8 flex justify-center relative z-20">
+                        <button 
+                            onClick={() => setShowAddGuide(true)}
+                            className="bg-white text-black px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                        >
+                            <PlusCircle size={18} />
+                            Add to Home Screen
+                        </button>
+                    </div>
+                )}
+
+                {/* Guide Text Overlay */}
+                {showAddGuide && (
+                    <div className="absolute inset-0 bg-black/80 z-30 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+                        <Smartphone size={48} className="text-white mb-4 animate-pulse" />
+                        <h4 className="text-white font-bold text-lg mb-2">To Add Widget:</h4>
+                        <ol className="text-gray-300 text-sm space-y-3 text-left list-decimal pl-4">
+                            <li>Go to your phone's <b>Home Screen</b>.</li>
+                            <li><b>Long press</b> on an empty space.</li>
+                            <li>Select <b>Widgets</b>.</li>
+                            <li>Find <b>Shree App</b> in the list.</li>
+                            <li>Drag the widget to your screen.</li>
+                        </ol>
+                        <button 
+                            onClick={() => setShowAddGuide(false)}
+                            className="mt-8 text-white/50 text-xs uppercase font-bold tracking-widest hover:text-white"
+                        >
+                            Close
+                        </button>
+                    </div>
+                )}
 
                 {/* Fake App Grid at bottom */}
-                <div className="mt-auto mb-8 grid grid-cols-4 gap-6 px-6 relative z-10">
-                    {[1,2,3,4].map(i => (
-                        <div key={i} className="flex flex-col items-center gap-2">
-                            <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg flex items-center justify-center">
-                                {i === 1 && <div className="w-8 h-8 rounded-full bg-lime-400 flex items-center justify-center text-red-600 font-bold font-hindi text-lg">श्री</div>}
+                {!showAddGuide && (
+                    <div className="mt-auto mb-8 grid grid-cols-4 gap-6 px-6 relative z-10">
+                        {[1,2,3,4].map(i => (
+                            <div key={i} className="flex flex-col items-center gap-2">
+                                <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg flex items-center justify-center">
+                                    {i === 1 && <div className="w-8 h-8 rounded-full bg-lime-400 flex items-center justify-center text-red-600 font-bold font-hindi text-lg">श्री</div>}
+                                </div>
+                                <div className="w-8 h-1.5 bg-white/20 rounded-full"></div>
                             </div>
-                            <div className="w-8 h-1.5 bg-white/20 rounded-full"></div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     </div>

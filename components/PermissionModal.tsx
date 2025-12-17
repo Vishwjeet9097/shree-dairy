@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Bell, Mic, ShieldCheck, X } from 'lucide-react';
+import { Bell, Mic, ShieldCheck, X, FolderLock } from 'lucide-react';
 import { Language } from '../types';
 
 interface Props {
   isOpen: boolean;
-  type: 'notification' | 'microphone';
+  type: 'notification' | 'microphone' | 'storage';
   onConfirm: () => void;
   onCancel: () => void;
   language: Language;
@@ -14,18 +14,36 @@ interface Props {
 const PermissionModal: React.FC<Props> = ({ isOpen, type, onConfirm, onCancel, language }) => {
   if (!isOpen) return null;
 
-  const isNotif = type === 'notification';
-
-  const content = {
-    title: isNotif ? 'Enable Notifications' : 'Voice Access Required',
-    subtitle: isNotif ? 'Never miss a delivery or payment.' : 'Hands-free management.',
-    description: isNotif 
-        ? 'Get timely reminders for morning/evening routes, payment alerts, and cattle health schedules. Essential for your business flow.'
-        : 'Shree AI needs microphone access to listen to your commands for adding entries, customers, and records effortlessly.',
-    icon: isNotif ? <Bell size={40} className="text-white" /> : <Mic size={40} className="text-white" />,
-    gradient: isNotif ? 'from-lime-400 to-lime-600' : 'from-blue-400 to-blue-600',
-    shadow: isNotif ? 'shadow-lime-500/30' : 'shadow-blue-500/30',
+  const getDetails = () => {
+      switch(type) {
+          case 'notification': return {
+              title: 'Enable Notifications',
+              subtitle: 'Never miss a delivery.',
+              desc: 'Get timely reminders for morning/evening routes and cattle alerts.',
+              icon: <Bell size={40} className="text-white" />,
+              gradient: 'from-lime-400 to-lime-600',
+              shadow: 'shadow-lime-500/30'
+          };
+          case 'storage': return {
+              title: 'Backup & Storage',
+              subtitle: 'Prevent data loss.',
+              desc: 'We need access to your Documents folder to save daily backups. This ensures your data is safe even if you uninstall the app.',
+              icon: <FolderLock size={40} className="text-white" />,
+              gradient: 'from-orange-400 to-orange-600',
+              shadow: 'shadow-orange-500/30'
+          };
+          default: return {
+              title: 'Voice Access',
+              subtitle: 'Hands-free control.',
+              desc: 'Shree AI needs microphone access to listen to your commands.',
+              icon: <Mic size={40} className="text-white" />,
+              gradient: 'from-blue-400 to-blue-600',
+              shadow: 'shadow-blue-500/30'
+          };
+      }
   };
+
+  const content = getDetails();
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-fade-in">
@@ -61,7 +79,7 @@ const PermissionModal: React.FC<Props> = ({ isOpen, type, onConfirm, onCancel, l
              </p>
 
              <p className="text-sm text-gray-400 mb-8 leading-relaxed px-2">
-                 {content.description}
+                 {content.desc}
              </p>
 
              {/* Actions */}

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, MapPin, Droplet, IndianRupee, Check, Star, Languages, Loader2 } from 'lucide-react';
+import { X, User, Phone, MapPin, Droplet, IndianRupee, Check, Star, Languages, Loader2, Sun, Moon } from 'lucide-react';
 import { Language, Customer } from '../types';
 import { TEXTS } from '../constants';
 import { transliterateToHindi } from '../services/gemini';
@@ -191,29 +191,29 @@ const AddCustomerModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialDat
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-             {/* Time Selection */}
-             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-1 flex">
+          <div className="space-y-4">
+             {/* Time Selection - Segmented Control Style */}
+             <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-xl flex">
                 <button
-                type="button"
-                onClick={() => setFormData({...formData, preferredTime: 'morning'})}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${formData.preferredTime === 'morning' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                    type="button"
+                    onClick={() => setFormData({...formData, preferredTime: 'morning'})}
+                    className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${formData.preferredTime === 'morning' ? 'bg-white dark:bg-gray-600 text-orange-600 dark:text-orange-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
-                {t.morning}
+                    <Sun size={14} /> {t.morning}
                 </button>
                 <button
-                type="button"
-                onClick={() => setFormData({...formData, preferredTime: 'evening'})}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${formData.preferredTime === 'evening' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                    type="button"
+                    onClick={() => setFormData({...formData, preferredTime: 'evening'})}
+                    className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${formData.preferredTime === 'evening' ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
-                {t.evening}
+                    <Moon size={14} /> {t.evening}
                 </button>
                 <button
-                type="button"
-                onClick={() => setFormData({...formData, preferredTime: 'both'})}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${formData.preferredTime === 'both' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                    type="button"
+                    onClick={() => setFormData({...formData, preferredTime: 'both'})}
+                    className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${formData.preferredTime === 'both' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
-                Both
+                    Both
                 </button>
             </div>
 
@@ -223,7 +223,7 @@ const AddCustomerModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialDat
                 <select
                     value={formData.behavior}
                     onChange={(e) => setFormData({...formData, behavior: e.target.value as any})}
-                    className={`${inputClass} appearance-none`}
+                    className={`${inputClass} appearance-none cursor-pointer`}
                 >
                     <option value="very_good">{t.very_good}</option>
                     <option value="good">{t.good}</option>

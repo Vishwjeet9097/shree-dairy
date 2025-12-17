@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { X, Download, Share2, MessageCircle } from 'lucide-react';
+import { X, Download, Share2, FileText, Send, MessageCircle } from 'lucide-react';
 import { InvoiceData } from '../types';
-import { createInvoicePDF, saveInvoice, shareInvoice } from '../services/invoiceGenerator';
+import { createInvoicePDF, saveInvoice, saveToCache } from '../services/invoiceGenerator';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 interface Props {
   isOpen: boolean;
@@ -17,6 +18,8 @@ const InvoicePreviewModal: React.FC<Props> = ({ isOpen, onClose, data }) => {
 
   if (!isOpen || !data) return null;
 
+  const hasPhone = data.customer.phone && data.customer.phone.trim().length > 0;
+
   // -- HANDLERS --
 
   const handleDownload = async () => {
@@ -24,189 +27,231 @@ const InvoicePreviewModal: React.FC<Props> = ({ isOpen, onClose, data }) => {
       try {
           const doc = await createInvoicePDF(data);
           const filename = `Invoice_${data.invoiceNumber}.pdf`;
-          await saveInvoice(doc, filename);
           
           if (Capacitor.isNativePlatform()) {
-             setStatusMsg('Saved to Documents');
-             setTimeout(() => setStatusMsg(''), 3000);
+             const uri = await saveToCache(doc, filename);
+             await Share.share({
+                files: [uri],
+             });
+             setStatusMsg('File Saved');
+          } else {
+             await saveInvoice(doc, filename);
+             setStatusMsg('Downloaded');
           }
       } catch (error) {
           console.error(error);
           setStatusMsg('Error saving');
       } finally {
           setIsGenerating(false);
+          setTimeout(() => setStatusMsg(''), 3000);
       }
   };
 
-  const handleWhatsAppShare = () => {
-      if (!data.customer.phone) {
-          setStatusMsg('No phone number');
-          setTimeout(() => setStatusMsg(''), 2000);
+  const handleSharePDF = async () => {
+      setIsGenerating(true);
+      try {
+          const doc = await createInvoicePDF(data);
+          const filename = `Invoice_${data.invoiceNumber}.pdf`;
+          const uri = await saveToCache(doc, filename);
+          
+          await Share.share({
+              title: `Invoice ${data.invoiceNumber}`,
+              text: `Invoice for ${data.customer.name}`,
+              files: [uri], 
+              dialogTitle: 'Share Invoice PDF'
+          });
+      } catch (e) {
+          console.error(e);
+          setStatusMsg('Share failed');
+      } finally {
+          setIsGenerating(false);
+      }
+  };
+
+  const handleWhatsAppText = () => {
+      if (!hasPhone) {
+          setStatusMsg('No Phone Number');
           return;
       }
+      
+      const text = `
+*Invoice Summary*
+Hello ${data.customer.name}, here is your milk bill details:
 
-      const text = `🧾 Invoice for ${data.customer.name}
+*Month:* ${new Date(data.date).toLocaleString('default', { month: 'long', year: 'numeric' })}
+*Total Milk:* ${data.items.reduce((acc, i) => acc + parseFloat(i.qty), 0)} kg
+*Current Bill:* ₹${data.totals.subtotal}
+*Previous Due:* ₹${data.totals.previousDue}
+*Paid:* -₹${data.totals.paid}
 
-Month: ${data.items[0].description}
-Total Quantity: ${data.items[0].qty}
-Current Bill: ₹${data.totals.subtotal}
-Previous Due: ₹${data.totals.previousDue}
+*Grand Total Due: ₹${data.totals.grandTotal}*
 
-*Grand Total: ₹${data.totals.grandTotal}*
-
-Please pay by ${data.dueDate}.
-From: ${data.businessDetails.businessName}`;
+Please pay at your earliest convenience.
+- ${data.businessDetails.businessName}
+      `.trim();
 
       const url = `https://wa.me/91${data.customer.phone}?text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
        {/* Modal Container */}
-       <div className="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] h-full rounded-[2rem] shadow-2xl relative flex flex-col ring-1 ring-white/10">
+       <div className="bg-gray-100 dark:bg-gray-900 w-full max-w-lg h-[90vh] rounded-[2.5rem] shadow-2xl relative flex flex-col overflow-hidden ring-1 ring-white/10">
            
            {/* Header */}
-           <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 shrink-0 z-10 rounded-t-[2rem]">
+           <div className="px-6 py-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 flex justify-between items-center shrink-0 z-20 absolute top-0 left-0 right-0">
                <div>
-                   <h2 className="text-lg font-bold text-gray-900 dark:text-white font-hindi">Invoice Preview</h2>
-                   <p className="text-xs text-gray-500">{data.invoiceNumber}</p>
+                   <h2 className="text-xl font-bold text-gray-900 dark:text-white font-hindi">Invoice Preview</h2>
+                   <p className="text-xs text-gray-500 font-mono">{data.invoiceNumber}</p>
                </div>
-               <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+               <button onClick={onClose} className="p-2 bg-gray-200 dark:bg-gray-800 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">
                    <X size={20} className="text-gray-600 dark:text-gray-300" />
                </button>
            </div>
 
-           {/* Scrollable Content Area with Darker Background for Contrast */}
-           <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-200 dark:bg-black/50 p-6 custom-scrollbar">
+           {/* Scrollable Content Area */}
+           <div className="flex-1 overflow-y-auto pt-24 pb-32 px-4 custom-scrollbar bg-gray-200 dark:bg-black/50">
                 
-                {/* PDF Paper Representation */}
-                <div className="bg-white text-gray-900 p-8 shadow-2xl min-h-[600px] text-sm relative mb-24 mx-auto max-w-full border border-gray-300 ring-4 ring-gray-100 dark:ring-gray-800/50"> 
+                {/* PDF Paper Effect */}
+                <div className="bg-white text-gray-900 p-8 shadow-[0_10px_40px_rgba(0,0,0,0.15)] relative mx-auto max-w-full rounded-sm min-h-[500px]"> 
                     
-                    {/* Invoice Header */}
-                    <div className="flex justify-between items-start mb-10 pb-6 border-b border-gray-100">
+                    {/* Watermark */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none overflow-hidden">
+                        <span className="text-[150px] font-bold text-red-600 rotate-[-30deg] font-hindi">श्री</span>
+                    </div>
+
+                    {/* Header Section */}
+                    <div className="flex justify-between items-start mb-8 border-b-2 border-lime-500 pb-6">
                         <div>
-                            <h1 className="text-4xl font-bold text-red-600 tracking-wide font-hindi leading-tight">
+                            <h1 className="text-4xl font-bold text-red-600 font-hindi tracking-wide leading-none mb-2">
                                 {data.businessDetails.businessNameHi || "श्री"}
                             </h1>
-                            <p className="text-gray-500 text-[11px] mt-1 uppercase tracking-widest font-bold">{data.businessDetails.businessName}</p>
+                            <p className="text-gray-600 text-xs font-bold uppercase tracking-widest">{data.businessDetails.businessName}</p>
+                            <div className="mt-4 text-xs text-gray-500">
+                                <p>{data.businessDetails.address}</p>
+                                <p>Ph: +91 {data.businessDetails.phone}</p>
+                            </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Invoice #</p>
-                            <p className="font-bold text-lg text-gray-800">{data.invoiceNumber}</p>
-                            <div className="mt-2">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase mr-2">Due Date</span>
-                                <span className="text-xs text-red-600 font-bold">{data.dueDate}</span>
+                            <div className="bg-lime-50 text-lime-800 px-3 py-1 rounded-md inline-block mb-2">
+                                <p className="text-[10px] font-extrabold uppercase tracking-widest">Invoice No</p>
+                                <p className="font-bold text-sm font-mono">{data.invoiceNumber}</p>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                <p><span className="font-bold">Date:</span> {data.date}</p>
+                                <p className="text-red-500 mt-1"><span className="font-bold">Due:</span> {data.dueDate}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Address Grid */}
-                    <div className="flex flex-col sm:flex-row justify-between gap-8 mb-10">
-                        <div className="flex-1">
-                            <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-widest">Bill To</h3>
-                            <p className="font-bold font-hindi text-lg text-gray-900 mb-1">{data.customer.name}</p>
-                            <p className="text-gray-600 text-sm mb-1">+91 {data.customer.phone}</p>
-                            <p className="text-gray-600 text-sm leading-relaxed max-w-[180px]">{data.customer.address}</p>
-                        </div>
-                        <div className="flex-1 sm:text-right">
-                            <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-widest">From</h3>
-                            <p className="font-bold text-lg text-gray-900 mb-1">{data.businessDetails.ownerName}</p>
-                            <p className="text-gray-600 text-sm leading-relaxed mb-1">{data.businessDetails.address}</p>
-                            <p className="text-gray-600 text-sm">+91 {data.businessDetails.phone}</p>
-                        </div>
+                    {/* Bill To */}
+                    <div className="mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Bill To</p>
+                        <h3 className="font-bold text-lg text-gray-900 font-hindi">{data.customer.name}</h3>
+                        {data.customer.address && <p className="text-xs text-gray-500">{data.customer.address}</p>}
+                        {data.customer.phone && <p className="text-xs text-gray-500 font-mono mt-1">+91 {data.customer.phone}</p>}
                     </div>
 
-                    {/* Table */}
-                    <div className="border border-gray-200 rounded-none overflow-hidden mb-8">
-                        <table className="w-full text-left min-w-[300px]">
-                            <thead className="bg-lime-500 text-white text-xs uppercase tracking-wider">
-                                <tr>
-                                    <th className="p-3 font-bold">Item Description</th>
-                                    <th className="p-3 text-right font-bold">Rate</th>
-                                    <th className="p-3 text-right font-bold">Qty</th>
-                                    <th className="p-3 text-right font-bold">Total</th>
+                    {/* Item Table */}
+                    <div className="mb-8">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b-2 border-gray-100">
+                                    <th className="py-2 text-xs font-bold text-gray-500 uppercase">Item</th>
+                                    <th className="py-2 text-xs font-bold text-gray-500 uppercase text-right">Rate</th>
+                                    <th className="py-2 text-xs font-bold text-gray-500 uppercase text-right">Qty</th>
+                                    <th className="py-2 text-xs font-bold text-gray-500 uppercase text-right">Total</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 text-xs">
+                            <tbody className="text-sm">
                                 {data.items.map((item, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50/50">
-                                        <td className="p-3 font-medium text-gray-700">{item.description}</td>
-                                        <td className="p-3 text-right text-gray-500">{item.rate}</td>
-                                        <td className="p-3 text-right text-gray-500">{item.qty}</td>
-                                        <td className="p-3 text-right font-bold text-gray-900">{Math.round(item.total)}</td>
+                                    <tr key={idx} className="border-b border-gray-50 last:border-0">
+                                        <td className="py-3 font-medium text-gray-800">{item.description}</td>
+                                        <td className="py-3 text-right text-gray-500">{item.rate}</td>
+                                        <td className="py-3 text-right text-gray-500">{item.qty}</td>
+                                        <td className="py-3 text-right font-bold text-gray-900">₹{Math.round(item.total)}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* Totals */}
-                    <div className="flex justify-end mb-12">
-                        <div className="w-full max-w-[240px] space-y-3">
-                            <div className="flex justify-between text-xs font-medium text-gray-500">
-                                <span>Current Bill</span>
-                                <span className="text-gray-900 font-bold">{data.totals.subtotal.toFixed(0)}</span>
+                    {/* Calculations */}
+                    <div className="flex justify-end">
+                        <div className="w-1/2 min-w-[200px] space-y-2">
+                            <div className="flex justify-between text-xs text-gray-500">
+                                <span>Subtotal</span>
+                                <span className="font-bold text-gray-900">₹{data.totals.subtotal}</span>
                             </div>
                             {data.totals.previousDue !== 0 && (
-                                <div className="flex justify-between text-xs font-medium text-gray-500">
-                                    <span>{data.totals.previousDue > 0 ? 'Previous Due' : 'Advance'}</span>
-                                    <span className={`font-bold ${data.totals.previousDue > 0 ? 'text-gray-900' : 'text-green-600'}`}>
-                                        {data.totals.previousDue > 0 ? '' : '- '}{Math.abs(data.totals.previousDue).toFixed(0)}
+                                <div className="flex justify-between text-xs text-gray-500">
+                                    <span>{data.totals.previousDue > 0 ? 'Previous Due' : 'Advance Credit'}</span>
+                                    <span className={`${data.totals.previousDue > 0 ? 'text-gray-900' : 'text-green-600'} font-bold`}>
+                                        {data.totals.previousDue > 0 ? '+' : '-'} ₹{Math.abs(data.totals.previousDue)}
                                     </span>
                                 </div>
                             )}
-                            <div className="flex justify-between text-xs font-medium text-red-500">
+                            <div className="flex justify-between text-xs text-red-500">
                                 <span>Paid Amount</span>
-                                <span>- {data.totals.paid.toFixed(0)}</span>
+                                <span className="font-bold">- ₹{data.totals.paid}</span>
                             </div>
-                            <div className="border-t-2 border-gray-100 pt-3 flex justify-between items-center">
-                                <span className="text-sm font-bold text-lime-600 uppercase tracking-wide">Total Payable</span>
-                                <span className="text-xl font-bold text-gray-900">₹{data.totals.grandTotal.toFixed(0)}</span>
+                            <div className="border-t-2 border-gray-900 pt-3 mt-3 flex justify-between items-center">
+                                <span className="text-sm font-bold uppercase tracking-wide">Total Due</span>
+                                <span className="text-2xl font-bold text-lime-600">₹{data.totals.grandTotal}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer Note */}
-                    <div className="absolute bottom-8 left-0 right-0 text-center">
-                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Thank you for your business!</p>
-                        <p className="text-[9px] text-gray-300 mt-1">Generated by Shree Dairy Manager</p>
+                    {/* Signature Area */}
+                    <div className="mt-12 pt-8 border-t border-gray-100 flex justify-between items-end">
+                        <div className="text-[10px] text-gray-400">
+                            Generated via Shree App
+                        </div>
+                        <div className="text-center">
+                            <div className="h-10"></div> {/* Space for signature */}
+                            <p className="text-[10px] font-bold text-gray-900 uppercase tracking-widest border-t border-gray-300 pt-1 px-4">Authorized Signature</p>
+                        </div>
                     </div>
                 </div>
            </div>
 
-           {/* Actions - Fixed Bottom */}
-           <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-20 rounded-b-[2rem]">
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                    {data.customer.phone ? (
+           {/* Actions Footer */}
+           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 z-30 pb-safe-area">
+                <div className="flex gap-2">
+                    {/* WhatsApp Text Button */}
+                    {hasPhone && (
                         <button 
-                            onClick={handleWhatsAppShare}
-                            className="py-3.5 rounded-xl bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors shadow-lg active:scale-95"
-                        >
-                            <MessageCircle size={18} fill="currentColor" />
-                            WhatsApp Bill
-                        </button>
-                    ) : (
-                        <button 
-                            disabled
-                            className="py-3.5 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-400 font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                            onClick={handleWhatsAppText}
+                            className="flex-1 py-3.5 rounded-2xl bg-green-100 text-green-800 font-bold flex items-center justify-center gap-2 hover:bg-green-200 transition-colors active:scale-95"
                         >
                             <MessageCircle size={18} />
-                            No Phone
+                            <span className="text-xs">Send Text</span>
                         </button>
                     )}
 
+                    {/* Share PDF Button */}
+                    <button 
+                        onClick={handleSharePDF}
+                        disabled={isGenerating}
+                        className="flex-[2] py-3.5 rounded-2xl bg-lime-400 text-gray-900 hover:bg-lime-500 font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-lime-200/50 dark:shadow-none active:scale-95 disabled:opacity-50"
+                    >
+                        {isGenerating ? <FileText size={18} className="animate-bounce"/> : <Share2 size={18} />}
+                        Share PDF
+                    </button>
+
+                    {/* Download Button */}
                     <button 
                         onClick={handleDownload}
                         disabled={isGenerating}
-                        className="py-3.5 rounded-xl bg-gray-900 dark:bg-gray-700 text-white font-bold flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors shadow-lg shadow-gray-200 dark:shadow-none active:scale-95"
+                        className="p-3.5 rounded-2xl bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors active:scale-95"
                     >
-                        <Download size={18} />
-                        Download PDF
+                        <Download size={20} />
                     </button>
                 </div>
+                
                 {statusMsg && (
-                    <div className="text-center text-xs font-bold text-lime-600 dark:text-lime-400 animate-pulse">
+                    <div className="text-center text-[10px] font-bold text-gray-500 mt-2 animate-pulse">
                         {statusMsg}
                     </div>
                 )}

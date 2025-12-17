@@ -130,6 +130,41 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ language, customers, en
               return { history };
           }
 
+          if (name === 'get_recent_activity') {
+              // Get recent entries
+              const recentEntries = entries
+                  .sort((a,b) => b.timestamp - a.timestamp)
+                  .slice(0, 3)
+                  .map(e => {
+                      const c = customers.find(cust => cust.id === e.customerId);
+                      return {
+                          type: 'Entry',
+                          customer: c ? c.name : 'Unknown',
+                          desc: `${e.quantity}L (${e.isDelivered?'Yes':'No'})`,
+                          time: new Date(e.timestamp).toLocaleTimeString()
+                      };
+                  });
+              
+              // Get recently created customers
+              const recentCustomers = customers
+                  .sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0))
+                  .slice(0, 3)
+                  .map(c => ({
+                      type: 'New Customer',
+                      customer: c.name,
+                      desc: `${c.ratePerKg}/L, ${c.preferredTime}`,
+                      time: new Date(c.createdAt).toLocaleTimeString()
+                  }));
+
+              // Merge and sort
+              const combined = [...recentEntries, ...recentCustomers]
+                  .sort((a,b) => new Date(b.time).getTime() - new Date(a.time).getTime()) // Approx sort by string time for now, or fetch timestamp better
+                  .slice(0, 5);
+
+              if (combined.length === 0) return { message: "No recent activity recorded." };
+              return { recent_activity: combined };
+          }
+
           if (name === 'get_customer_status') {
               const customerName = data.customerName;
               const customer = findCustomer(customerName);
@@ -365,7 +400,7 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ language, customers, en
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-xl animate-fade-in p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/95 backdrop-blur-xl animate-fade-in p-6">
        <button 
             onClick={() => setIsMinimized(true)}
             className="absolute top-6 right-6 p-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"

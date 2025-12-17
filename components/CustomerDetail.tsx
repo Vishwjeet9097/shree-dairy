@@ -308,15 +308,15 @@ const CustomerDetail: React.FC<Props> = ({
       {/* Content Area */}
       <div className="px-4">
         {viewMode === 'calendar' && (
-            <div className="bg-white dark:bg-gray-800 rounded-[2rem] p-5 shadow-sm transition-colors">
+            <div className="bg-white dark:bg-gray-800 rounded-[2rem] p-5 shadow-sm transition-colors border border-gray-50 dark:border-gray-700">
             <div className="flex justify-between items-center mb-6">
                 <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"><ChevronLeft className="text-gray-600 dark:text-gray-300" size={20}/></button>
                 <span className="text-gray-900 dark:text-white font-bold text-lg">{currentMonth.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { month: 'long', year: 'numeric' })}</span>
                 <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"><ChevronRight className="text-gray-600 dark:text-gray-300" size={20}/></button>
             </div>
             
-            <div className="grid grid-cols-7 gap-2 text-center mb-2">
-                {['S','M','T','W','T','F','S'].map(d => <span key={d} className="text-xs text-gray-400 font-bold">{d}</span>)}
+            <div className="grid grid-cols-7 gap-2 text-center mb-4">
+                {['S','M','T','W','T','F','S'].map(d => <span key={d} className="text-xs text-gray-400 font-bold uppercase tracking-wide">{d}</span>)}
             </div>
             
             <div className="grid grid-cols-7 gap-2">
@@ -343,20 +343,22 @@ const CustomerDetail: React.FC<Props> = ({
                 const mStatus = getSlotStatus(morningEntry);
                 const eStatus = getSlotStatus(eveningEntry);
 
-                let bgClass = 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
-                if (isToday) bgClass += ' ring-2 ring-blue-400';
-                if (isFuture) bgClass = 'bg-gray-50/50 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60';
+                // ENHANCED DAY CELL STYLING
+                let bgClass = 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600';
+                if (isToday) bgClass = 'bg-gray-900 dark:bg-lime-900/40 text-white dark:text-white ring-2 ring-lime-400 dark:ring-lime-500 shadow-lg shadow-lime-500/20';
+                if (isFuture) bgClass = 'bg-transparent text-gray-300 dark:text-gray-700 cursor-not-allowed';
 
                 const renderDot = (type: 'sun' | 'moon', status: string) => {
-                    if (status === 'pending' && isFuture) return <div className="w-2 h-2 rounded-full bg-gray-200 dark:bg-gray-600"></div>;
-                    if (status === 'pending') return <div className="w-2 h-2 rounded-full border border-gray-300 dark:border-gray-500"></div>;
+                    if (status === 'pending' && isFuture) return <div className="w-1.5 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700"></div>;
+                    if (status === 'pending') return <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-500"></div>;
                     
                     let colorClass = '';
-                    if (status === 'delivered') colorClass = type === 'sun' ? 'text-orange-500' : 'text-indigo-500';
+                    // Brighter indicators
+                    if (status === 'delivered') colorClass = type === 'sun' ? 'text-orange-500' : 'text-indigo-400';
                     if (status === 'absent') colorClass = 'text-red-500';
 
                     const Icon = type === 'sun' ? Sun : Moon;
-                    return <Icon size={12} className={colorClass} fill={status === 'delivered' ? 'currentColor' : 'none'} strokeWidth={2.5} />;
+                    return <Icon size={10} className={colorClass} fill={status === 'delivered' ? 'currentColor' : 'none'} strokeWidth={2.5} />;
                 };
 
                 return (
@@ -364,12 +366,12 @@ const CustomerDetail: React.FC<Props> = ({
                     key={day} 
                     onClick={() => !isFuture && handleDayClick(day)}
                     disabled={isFuture}
-                    className={`aspect-square rounded-xl flex flex-col items-center justify-between py-1.5 px-0.5 relative ${bgClass} transition-all ${!isFuture ? 'active:scale-95' : ''}`}
+                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all duration-200 ${bgClass} ${!isFuture ? 'active:scale-95' : ''}`}
                     >
-                    <span className="text-sm font-bold leading-none">{day}</span>
+                    <span className="text-sm font-bold mb-1">{day}</span>
                     
                     {/* Indicators Container */}
-                    <div className="flex gap-1 items-center justify-center w-full">
+                    <div className="flex gap-1 items-center justify-center w-full h-3">
                         {(customer.preferredTime === 'morning' || customer.preferredTime === 'both') && renderDot('sun', mStatus)}
                         {(customer.preferredTime === 'evening' || customer.preferredTime === 'both') && renderDot('moon', eStatus)}
                     </div>
@@ -380,14 +382,14 @@ const CustomerDetail: React.FC<Props> = ({
             
             {/* Legend */}
             <div className="flex justify-center gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                    <Sun size={10} className="text-orange-500" fill="currentColor"/> Delivered
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 uppercase font-bold">
+                    <Sun size={12} className="text-orange-500" fill="currentColor"/> Delivered
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                    <Sun size={10} className="text-red-500" /> Absent
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 uppercase font-bold">
+                    <Sun size={12} className="text-red-500" /> Absent
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                    <div className="w-2 h-2 rounded-full border border-gray-400"></div> Pending
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 uppercase font-bold">
+                    <div className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div> Pending
                 </div>
             </div>
             </div>

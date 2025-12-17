@@ -25,7 +25,12 @@ export const INITIAL_STATE: AppState = {
   lastBackupTimestamp: 0,
   isOnboardingComplete: false,
   customApiKey: '',
-  useCustomApiKey: false
+  useCustomApiKey: false,
+  hasSeenMicRationale: false,
+  notificationSchedule: {
+      morning: "08:00",
+      evening: "19:00"
+  }
 };
 
 // Async Storage Wrapper for Native Platform
@@ -49,7 +54,9 @@ export const loadState = async (): Promise<AppState> => {
         notifications: Array.isArray(loadedState.notifications) ? loadedState.notifications : [],
         isOnboardingComplete: loadedState.isOnboardingComplete ?? false,
         customApiKey: loadedState.customApiKey || '',
-        useCustomApiKey: loadedState.useCustomApiKey || false
+        useCustomApiKey: loadedState.useCustomApiKey || false,
+        hasSeenMicRationale: loadedState.hasSeenMicRationale || false,
+        notificationSchedule: loadedState.notificationSchedule || INITIAL_STATE.notificationSchedule
     };
   } catch (err) {
     console.error("Load state failed", err);
