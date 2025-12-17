@@ -1,0 +1,7 @@
+{
+  "name": "श्री",
+  "description": "A professional, glassmorphic dairy management application designed for family businesses. Features Hindi voice commands, offline support, and comprehensive billing.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
